@@ -6,12 +6,11 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
-import { styled } from '@mui/material/styles'; // Use this import
+import { styled } from '@mui/material/styles';
 
 const StyledLink = styled(Link)(({ theme }) => ({
     textDecoration: "none",
     color: "white",
-
 }));
 
 const StyledIconButton = styled(IconButton)(({ theme }) => ({
@@ -19,26 +18,22 @@ const StyledIconButton = styled(IconButton)(({ theme }) => ({
 }));
 
 function Navbar() {
-    let userId = 1;
+    let userId = 1; // Hardcoded userId for now
 
     return (
         <AppBar position="static">
             <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <StyledIconButton
-                        size="large"
-                        edge="start"
-                        color="inherit"
-                        aria-label="menu"
-                    >
-                        <MenuIcon />
-                    </StyledIconButton>
-                </div>
-                <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                <StyledIconButton size="large" edge="start" color="inherit" aria-label="menu">
+                    <MenuIcon />
+                </StyledIconButton>
+                <Typography variant="h6" component="div" >
                     <StyledLink to="/">Home</StyledLink>
                 </Typography>
                 <div>
                     <StyledLink to={`/users/${userId}`}>User</StyledLink>
+                </div>
+                <div>
+                    <StyledLink to={`/messages/${userId}`}>Message</StyledLink>
                 </div>
             </Toolbar>
         </AppBar>

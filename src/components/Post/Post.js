@@ -61,7 +61,6 @@ function Post(props) {
   const [likeCount, setLikeCount] = useState(likes.length);
   const [isLiking, setIsLiking] = useState(false);
 
-  // Handle card expand click
   const handleExpandClick = () => {
     setExpanded(!expanded);
     if (!expanded) {
@@ -69,9 +68,8 @@ function Post(props) {
     }
   };
 
-  // Handle like button click
   const handleLike = () => {
-    if (isLiking) return; // Prevent if already liking or deleting
+    if (isLiking) return;
 
     setIsLiking(true);
     const newLiked = !liked;
@@ -94,14 +92,12 @@ function Post(props) {
       .then(response => response.json())
       .then(data => {
         if (!data.success) {
-          // Revert state if something went wrong
           setLiked(!newLiked);
           setLikeCount(newLiked ? newLikeCount - 1 : newLikeCount + 1);
         }
       })
       .catch(error => {
         console.error('Error updating like:', error);
-        // Revert state if there is an error
         setLiked(!newLiked);
         setLikeCount(newLiked ? newLikeCount - 1 : newLikeCount + 1);
       })
@@ -110,13 +106,11 @@ function Post(props) {
       });
   };
 
-  // Check if the post is liked by the current user
   const checkLikes = () => {
     const isLiked = likes.some(like => like.userId === userId);
     setLiked(isLiked);
   };
 
-  // Refresh the comments list
   const refreshComments = () => {
     fetch(`/comments?postId=${postId}`)
       .then(res => res.json())
@@ -124,7 +118,6 @@ function Post(props) {
         (result) => {
           setIsLoaded(true);
           if (result.success) {
-            console.log("Fetched comments:", result.data); // Debugging
             setCommentList(result.data || []);
           } else {
             console.error("Error fetching comments:", result.message);
@@ -137,7 +130,6 @@ function Post(props) {
       );
   };
 
-  // Initialize state on mount
   useEffect(() => {
     checkLikes();
   }, [likes, userId]);
@@ -152,22 +144,12 @@ function Post(props) {
     setLikeCount(likes.length);
   }, [likes]);
 
-  // Handle comment submission
   const handleCommentSubmit = (newComment) => {
-    console.log("New comment submitted:", newComment);
     if (!newComment.id) {
       console.error("Comment missing id:", newComment);
       return;
     }
-    setCommentList(prevComments => {
-      if (!Array.isArray(prevComments)) {
-        console.error("prevComments is not an array");
-        return [];
-      }
-      return [...prevComments, newComment];
-    });
-
-    // Refresh the comments to ensure the new comment is fetched correctly
+    setCommentList(prevComments => [...prevComments, newComment]);
     refreshComments();
   };
 
@@ -214,7 +196,7 @@ function Post(props) {
                   commentList.length > 0 ? (
                     commentList.map(comment => (
                       <Comment
-                        key={comment.id} // Ensure that each Comment has a unique key
+                        key={comment.id}
                         userId={comment.userId}
                         userName={comment.userName}
                         text={comment.text}
