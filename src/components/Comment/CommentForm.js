@@ -34,14 +34,20 @@ const SubmitButton = styled(Button)({
 });
 
 const StyledOutlinedInput = styled(OutlinedInput)({
+    width: '100%',
     marginTop: '8px',
     padding: '8px',
     borderRadius: '4px',
     border: '1px solid #c4c4c4',
+    '& .MuiInputBase-input': {
+        paddingLeft: '0',
+    },
 });
 
-function CommentForm({ userId, username, postId, onSubmit }) {
+function CommentForm({ postId, onSubmit }) {
     const [commentText, setCommentText] = useState("");
+    const userId = localStorage.getItem('userId');
+    const username = localStorage.getItem('userName');
 
     const handleInputChange = (event) => {
         setCommentText(event.target.value);

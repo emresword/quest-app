@@ -1,53 +1,69 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import Message from './Message';
 import MessageForm from './MessageForm';
-import { ContactEmergency } from '@mui/icons-material';
-import { Container } from '@mui/material';
+import { Container, CircularProgress } from '@mui/material';
 
 export default function MessageBox() {
-    const { userId } = useParams();
+    const { userId } = useParams(); // Get receiver's userId from the URL
     const [error, setError] = useState(null);
     const [isLoaded, setIsLoaded] = useState(false);
     const [messages, setMessages] = useState([]);
 
-    const refreshMessages = async () => {
+    const refreshMessages = useCallback(async () => {
+        const senderUserId = localStorage.getItem('userId'); // Get the sender's userId
+        if (!senderUserId || !userId) {
+            setError("Sender or Receiver User ID is not available.");
+            return;
+        }
         try {
-            const response = await fetch(`/messages?userId=${userId}`);
+            const response = await fetch(`/messages?senderUserId=${senderUserId}&receiverUserId=${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+            });
             const result = await response.json();
-            if (Array.isArray(result.data)) {
+            console.log("API response:", result); // Log the API response for debugging
+
+            if (response.ok && Array.isArray(result.data)) {
                 setMessages(result.data);
             } else {
-                console.error("Expected an array but got", result.data);
+                console.error("Unexpected data format:", result.data);
                 setMessages([]);
             }
         } catch (error) {
-            setError(error);
+            console.error("Error fetching messages:", error);
+            setError("Failed to fetch messages.");
         } finally {
             setIsLoaded(true);
         }
-    };
+    }, [userId]); // Include userId in dependency array
 
     useEffect(() => {
         refreshMessages();
-    }, [userId]);
+    }, [refreshMessages]); // Include refreshMessages in dependency array
 
     if (error) {
-        return <div>Error: {error.message}</div>;
+        return <div>Error: {error}</div>;
     } else if (!isLoaded) {
-        return <div>Loading...</div>;
+        return <CircularProgress />;
     } else {
         return (
-            <div>
-                <Container>
-                    {messages.map((message) => (
-                        <Message key={message.id} text={message.text} />
-                    ))}
-                    <MessageForm userId={userId} refreshMessages={refreshMessages} />
-
-                </Container>
-
-            </div>
+            <Container>
+                {messages.length === 0 ? (
+                    <div>No messages found.</div>
+                ) : (
+                    messages.map((message) => (
+                        <Message 
+                            key={message.id} 
+                            text={message.text} 
+                            senderUserId={message.senderUserId} 
+                            receiverUserId={message.receiverUserId} // Display receiver's ID
+                        />
+                    ))
+                )}
+                <MessageForm refreshMessages={refreshMessages} receiverUserId={userId} />
+            </Container>
         );
     }
 }

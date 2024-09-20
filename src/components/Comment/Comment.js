@@ -41,15 +41,12 @@ const StyledOutlinedInput = styled(OutlinedInput)({
   },
 });
 
-function Comment(props) {
-  const { text, userId, userName } = props;
-
+function Comment({ text, userId, userName }) {
   return (
     <CommentContainer>
       <StyledOutlinedInput
-        disabled
         multiline
-        inputProps={{ maxLength: 250 }}
+        inputProps={{ readOnly: true, maxLength: 250 }}
         fullWidth
         value={text}
         startAdornment={
@@ -61,7 +58,6 @@ function Comment(props) {
                 </CommentAvatar>
                 <Typography variant="body2" color="text.secondary">
                   {userName}
-                  
                 </Typography>
               </CommentLink>
             </CommentAdornment>

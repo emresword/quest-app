@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { styled } from '@mui/material/styles';
 import Card from '@mui/material/Card';
 import CardHeader from '@mui/material/CardHeader';
@@ -12,24 +12,12 @@ import { red } from '@mui/material/colors';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import CommentIcon from '@mui/icons-material/Comment';
 import { Link } from 'react-router-dom';
-import { Container } from "@mui/material";
 import Comment from "../Comment/Comment";
 import CommentForm from "../Comment/CommentForm";
 
 const StyledLink = styled(Link)({
   textDecoration: 'none',
 });
-
-const ExpandMore = styled((props) => {
-  const { expand, ...other } = props;
-  return <IconButton {...other} />;
-})(({ theme, expand }) => ({
-  transform: !expand ? 'rotate(0deg)' : 'rotate(180deg)',
-  marginLeft: 'auto',
-  transition: theme.transitions.create('transform', {
-    duration: theme.transitions.duration.shortest,
-  }),
-}));
 
 const PostContainer = styled('div')({
   margin: '16px',
@@ -51,24 +39,41 @@ const CommentSection = styled('div')({
   gap: '8px',
 });
 
-function Post(props) {
-  const { title, text, userId, userName, postId, likes } = props;
+function Post({ title, text, postId, likes, userId, userName, refreshPosts }) {
   const [expanded, setExpanded] = useState(false);
   const [liked, setLiked] = useState(false);
-  const [error, setError] = useState(null);
-  const [isLoaded, setIsLoaded] = useState(false);
   const [commentList, setCommentList] = useState([]);
   const [likeCount, setLikeCount] = useState(likes.length);
   const [isLiking, setIsLiking] = useState(false);
 
+  // Check if the logged-in user has already liked the post
+  useEffect(() => {
+    const fetchLikeStatus = async () => {
+      const storedUserId = localStorage.getItem('userId');
+      if (storedUserId && likes) {
+        const userHasLiked = likes.some((like) => like.userId === parseInt(storedUserId));
+        setLiked(userHasLiked);
+      }
+    };
+    fetchLikeStatus();
+  }, [postId, likes]);
+
   const handleExpandClick = () => {
-    setExpanded(!expanded);
+    setExpanded(prev => !prev);
     if (!expanded) {
       refreshComments();
     }
   };
 
-  const handleLike = () => {
+  const handleLike = async () => {
+    const storedUserId = localStorage.getItem('userId');
+    const tokenKey = localStorage.getItem('tokenKey'); // Retrieve the token key from localStorage
+
+    if (!storedUserId) {
+      alert('You must be logged in to like posts.');
+      return;
+    }
+
     if (isLiking) return;
 
     setIsLiking(true);
@@ -78,77 +83,71 @@ function Post(props) {
     setLiked(newLiked);
     setLikeCount(newLikeCount);
 
-    const url = newLiked ? '/likes/add' : `/likes?userId=${userId}&postId=${postId}`;
-    const method = newLiked ? 'POST' : 'DELETE';
-    const body = newLiked ? JSON.stringify({ userId, postId }) : null;
+    try {
+      const url = newLiked ? '/likes/add' : `/likes?userId=${storedUserId}&postId=${postId}`;
+      const method = newLiked ? 'POST' : 'DELETE';
+      const body = newLiked ? JSON.stringify({ userId: storedUserId, postId }) : null;
 
-    fetch(url, {
-      method: method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: body,
-    })
-      .then(response => response.json())
-      .then(data => {
-        if (!data.success) {
-          setLiked(!newLiked);
-          setLikeCount(newLiked ? newLikeCount - 1 : newLikeCount + 1);
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${tokenKey}`, // Add the Authorization header with the token
+        },
+        body: body,
+      });
+      const data = await response.json();
+
+      if (!data.success) {
+        setLiked(!newLiked);
+        setLikeCount(newLiked ? newLikeCount - 1 : newLikeCount + 1);
+      }
+    } catch (error) {
+      console.error('Error updating like:', error);
+      setLiked(!newLiked);
+      setLikeCount(newLiked ? newLikeCount - 1 : newLikeCount + 1);
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  const refreshComments = useCallback(() => {
+    fetch(`/comments?postId=${postId}`)
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          setCommentList(result.data || []);
+        } else {
+          console.error("Error fetching comments:", result.message);
         }
       })
       .catch(error => {
-        console.error('Error updating like:', error);
-        setLiked(!newLiked);
-        setLikeCount(newLiked ? newLikeCount - 1 : newLikeCount + 1);
-      })
-      .finally(() => {
-        setIsLiking(false);
+        console.error("Error fetching comments:", error);
       });
-  };
-
-  const checkLikes = () => {
-    const isLiked = likes.some(like => like.userId === userId);
-    setLiked(isLiked);
-  };
-
-  const refreshComments = () => {
-    fetch(`/comments?postId=${postId}`)
-      .then(res => res.json())
-      .then(
-        (result) => {
-          setIsLoaded(true);
-          if (result.success) {
-            setCommentList(result.data || []);
-          } else {
-            console.error("Error fetching comments:", result.message);
-          }
-        },
-        (error) => {
-          setIsLoaded(true);
-          setError(error);
-        }
-      );
-  };
-
-  useEffect(() => {
-    checkLikes();
-  }, [likes, userId]);
+  }, [postId]);
 
   useEffect(() => {
     if (expanded) {
       refreshComments();
     }
-  }, [expanded]);
+  }, [expanded, refreshComments]);
 
   useEffect(() => {
     setLikeCount(likes.length);
   }, [likes]);
 
   const handleCommentSubmit = (newComment) => {
+    const storedUserId = localStorage.getItem('userId');
+    if (!storedUserId) {
+      alert('You must be logged in to comment.');
+      return;
+    }
+
     if (!newComment.id) {
       console.error("Comment missing id:", newComment);
       return;
     }
+
     setCommentList(prevComments => [...prevComments, newComment]);
     refreshComments();
   };
@@ -160,55 +159,45 @@ function Post(props) {
           avatar={
             <StyledLink to={`/users/${userId}`}>
               <Avatar sx={{ bgcolor: red[500] }} aria-label="recipe">
-                {userName.charAt(0).toUpperCase()}
+                {userName ? userName.charAt(0).toUpperCase() : ''}
               </Avatar>
             </StyledLink>
           }
-          titleTypographyProps={{ align: 'left' }}
           title={title}
         />
         <CardContent>
-          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'left' }}>
+          <Typography variant="body2" color="text.secondary">
             {text}
           </Typography>
         </CardContent>
         <CardActions disableSpacing>
-          <IconButton onClick={handleLike} aria-label="add to favorites" disabled={isLiking}>
-            <FavoriteIcon style={{ color: liked ? "red" : "inherit", marginRight: '8px' }} />
-            <Typography variant="body2" color="text.secondary">
-              {likeCount}
-            </Typography>
+          <IconButton aria-label="add to favorites" onClick={handleLike}>
+            <FavoriteIcon color={liked ? "error" : "action"} />
+            <Typography variant="body2" color="text.secondary">{likeCount}</Typography>
           </IconButton>
-          <ExpandMore
-            expand={expanded}
+          <IconButton
             onClick={handleExpandClick}
             aria-expanded={expanded}
             aria-label="show more"
           >
             <CommentIcon />
-          </ExpandMore>
+          </IconButton>
         </CardActions>
         <Collapse in={expanded} timeout="auto" unmountOnExit>
           <CardContent>
-            <Container fixed>
-              <CommentSection>
-                {error ? "Error" : isLoaded ? (
-                  commentList.length > 0 ? (
-                    commentList.map(comment => (
-                      <Comment
-                        key={comment.id}
-                        userId={comment.userId}
-                        userName={comment.userName}
-                        text={comment.text}
-                      />
-                    ))
-                  ) : (
-                    "No comments available"
-                  )
-                ) : "Loading"}
-                <CommentForm userId={userId} username={userName} postId={postId} onSubmit={handleCommentSubmit} />
-              </CommentSection>
-            </Container>
+            <CommentSection>
+              {commentList.map(comment => (
+                <Comment key={comment.id} {...comment} />
+              ))}
+              {localStorage.getItem('userId') && (
+                <CommentForm postId={postId} onSubmit={handleCommentSubmit} />
+              )}
+              {!localStorage.getItem('userId') && (
+                <Typography variant="body2" color="text.secondary">
+                  Please log in to add comments.
+                </Typography>
+              )}
+            </CommentSection>
           </CardContent>
         </Collapse>
       </StyledCard>
