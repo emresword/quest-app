@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Checkbox, FormControlLabel, Typography } from '@mui/material';
 
-// Sample data fetching function
+// Sample data fetching function it will be coming from database this is just example
 const fetchAvailableHobbies = async () => {
   try {
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 1000)); 
 
     return [
       { id: 1, name: 'Reading' },
@@ -38,10 +38,10 @@ function Hobby({ open, onClose, userId }) {
 
           const userHobbiesData = await userHobbiesResponse.json();
           const userHobbies = userHobbiesData.data || [];
-          const hobbyIds = userHobbies.map(hobby => hobby.hobbyId); // Use hobbyId from the response
+          const hobbyIds = userHobbies.map(hobby => hobby.hobbyId); 
 
           setAvailableHobbies(availableHobbiesResponse);
-          setSelectedHobbies(hobbyIds); // Set selected hobbies based on user data
+          setSelectedHobbies(hobbyIds); 
         } catch (error) {
           console.error('Error loading hobbies:', error);
           const sampleHobbies = await fetchAvailableHobbies();
