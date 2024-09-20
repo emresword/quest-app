@@ -26,10 +26,10 @@ const isMatchedFlirt = async (userId) => {
       throw new Error("Failed to check mutual flirt");
     }
     const result = await response.json();
-    console.log("isMatchedFlirt response:", result); // Debugging line
+    console.log("isMatchedFlirt response:", result); 
     return result.data; // true or false
   } catch (error) {
-    console.error("Error in isMatchedFlirt:", error); // Debugging line
+    console.error("Error in isMatchedFlirt:", error); 
     throw new Error(error.message);
   }
 };
@@ -46,10 +46,10 @@ const checkMutualFlirt = async (userId, flirtId) => {
       throw new Error("Failed to check mutual flirt");
     }
     const result = await response.json();
-    console.log("checkMutualFlirt response:", result); // Debugging line
+    console.log("checkMutualFlirt response:", result);
     return result.data; // true or false
   } catch (error) {
-    console.error("Error in checkMutualFlirt:", error); // Debugging line
+    console.error("Error in checkMutualFlirt:", error); 
     throw new Error(error.message);
   }
 };
@@ -74,7 +74,7 @@ function FindFlirt() {
   const [selectedFollow, setSelectedFollow] = useState(null);
   const [message, setMessage] = useState("");
   const [isMutualFlirt, setIsMutualFlirt] = useState(false);
-  const [isFindFlirt, setIsFindFlirt] = useState(false); // New state for findFlirt
+  const [isFindFlirt, setIsFindFlirt] = useState(false); 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   useEffect(() => {
@@ -82,12 +82,12 @@ function FindFlirt() {
       setIsLoaded(false);
       try {
         const data = await fetchFollowing(userId);
-        console.log("fetchFollowing response:", data); // Debugging line
+        console.log("fetchFollowing response:", data);
         setFollowing(data.data || []);
 
         // Check if user has a flirt
         const matchedFlirt = await isMatchedFlirt(userId);
-        console.log("isMatchedFlirt result:", matchedFlirt); // Debugging line
+        console.log("isMatchedFlirt result:", matchedFlirt); 
         setIsFindFlirt(matchedFlirt); // Set boolean value directly
       } catch (err) {
         setError(err.message);
@@ -113,12 +113,12 @@ function FindFlirt() {
 
     try {
       const response = await setFlirtId(userId, selectedFollow.followedUserId);
-      console.log("setFlirtId response:", response); // Debugging line
+      console.log("setFlirtId response:", response); 
       setMessage(response.success ? "Flirt set successfully!" : response.message);
       setSnackbarOpen(true);
 
       const isMutual = await checkMutualFlirt(userId, selectedFollow.followedUserId);
-      console.log("checkMutualFlirt result:", isMutual); // Debugging line
+      console.log("checkMutualFlirt result:", isMutual); 
       setIsMutualFlirt(isMutual);
       
       setMessage(isMutual ? "Mutual flirt! You can message now." : "Flirt is not mutual yet.");
