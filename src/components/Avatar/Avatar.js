@@ -37,7 +37,7 @@ function Avatar({ username, selectedAvatar = 0, handleChangeAvatar, isOwnProfile
 
   const handleSave = () => {
     if (handleChangeAvatar) {
-      handleChangeAvatar(avatar); // Use the function passed as a prop
+      handleChangeAvatar(avatar); 
     }
     handleClose();
   };
